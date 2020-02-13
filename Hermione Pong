@@ -1,0 +1,166 @@
+
+let video;
+let poseNet;
+let poses = [];
+ 
+var x, y;
+var vx, vy;
+var leftPaddle;
+var rightPaddle;
+var rightscore = 0;
+var leftscore = 0; 
+ 
+function setup() {
+  createCanvas(640, 480);
+  video = createCapture(VIDEO);
+  video.size(width, height);
+ 
+  // Create a new poseNet method with a single detection
+  poseNet = ml5.poseNet(video, modelReady);
+  // This sets up an event that fills the global variable "poses"
+  // with an array every time new poses are detected
+  poseNet.on('pose', function(results) {
+    poses = results;
+  });
+  // Hide the video element, and just show the canvas
+  video.hide();
+ 
+  x = width / 2;
+  y = height / 2;
+  vx = 3;
+  vy = 2;
+ 
+  leftPaddle = height / 2;
+  rightPaddle = height / 2;
+ 
+  rectMode(CENTER);
+}
+ 
+function modelReady() {
+  select('#status').html('Model Loaded');
+}
+ 
+function draw() {
+  image(video, 0, 0, width, height);
+  
+  
+ 
+  // We can call both functions to draw all keypoints and the skeletons
+  // drawKeypoints();
+  // drawSkeleton();
+ 
+  // background(220);
+ 
+  rect(20, leftPaddle, 15, 50);
+  rect(width-20, rightPaddle, 15, 50);
+  ellipse(x, y, 20);
+  rect(width/2-7.5,0,15,10000);
+  textSize(22);
+  text('Left Player',90, 40);
+  text('Right Player',width-210, 40);
+  text(leftscore, 140, 70);
+  text(rightscore, width - 160, 70);
+  fill(255);
+  
+  x = x + vx;
+  y = y + vy;
+ 
+  if (y < 10) {
+    vy = -vy;
+  }
+  if (y > height-10) {
+    vy = -vy;
+  }
+  if (x <35) {
+    if (y < leftPaddle+25 && y > leftPaddle-25) {
+      vx = -vx;
+    } else {
+      rightscore ++;
+      vx = -vx;
+      // game over
+    }
+  }
+  if (x > width-35) {
+    if (y < rightPaddle+25 && y > rightPaddle-25) {
+      vx = -vx;
+    } else {
+       leftscore ++;
+      vx = -vx;
+      // game over
+      
+    }
+  }
+  
+  
+        
+  if (leftscore > 4) {
+    textSize(50);
+    text('You Win!',40, 250);
+    text('You Lose!',width-255, 250);    
+    noLoop()
+      }
+  
+    if (rightscore > 4) {
+    textSize(50);
+    text('You Lose!',40, 250);
+    text('You Win!',width-255, 250);    
+    noLoop()
+      }
+  
+  
+ for(var i = 0 ; i < poses.length; i++){
+
+    if (poses.length < 2) {
+    // if (0 < poses[0].pose.nose.x < width/2); {
+  leftPaddle = rightPaddle = poses[0].pose.nose.y;
+    // }
+  }
+ 
+ 
+  if (poses.length >= 2){
+  if (poses[0].pose.nose.x > poses[1].pose.nose.x);{
+    rightPaddle = poses[0].pose.nose.y;
+    leftPaddle = poses[1].pose.nose.y;
+  }
+    if (poses[0].pose.nose.x < poses[1].pose.nose.x) {
+    rightPaddle = poses[1].pose.nose.y;
+    leftPaddle = poses[0].pose.nose.y;
+    }
+  }
+ 
+}
+ 
+// A function to draw ellipses over the detected keypoints
+function drawKeypoints() {
+  // Loop through all the poses detected
+  for (let i = 0; i < poses.length; i++) {
+    // For each pose detected, loop through all the keypoints
+    let pose = poses[i].pose;
+    for (let j = 0; j < pose.keypoints.length; j++) {
+      // A keypoint is an object describing a body part (like rightArm or leftShoulder)
+      let keypoint = pose.keypoints[j];
+      // Only draw an ellipse is the pose probability is bigger than 0.2
+      if (keypoint.score > 0.2) {
+        fill(255);
+        noStroke();
+        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
+      }
+    }
+  }
+}
+ 
+// A function to draw the skeletons
+function drawSkeleton() {
+  // Loop through all the skeletons detected
+  for (let i = 0; i < poses.length; i++) {
+    let skeleton = poses[i].skeleton;
+    // For every skeleton, loop through all body connections
+    for (let j = 0; j < skeleton.length; j++) {
+      let partA = skeleton[j][0];
+      let partB = skeleton[j][1];
+      stroke(255, 0, 0);
+      line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
+    }
+  }
+}
+}
